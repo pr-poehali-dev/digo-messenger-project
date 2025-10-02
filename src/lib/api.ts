@@ -147,5 +147,19 @@ export const api = {
       body: JSON.stringify({ action: 'revoke_admin', user_id: targetUserId })
     });
     return response.json();
+  },
+
+  async updateTypingStatus(senderId: string, receiverId: string, isTyping: boolean) {
+    const response = await fetch(API_URLS.messages, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'typing', sender_id: senderId, receiver_id: receiverId, is_typing: isTyping })
+    });
+    return response.json();
+  },
+
+  async getTypingStatus(userId: string, otherUserId: string) {
+    const response = await fetch(`${API_URLS.messages}?action=typing_status&user_id=${userId}&other_user_id=${otherUserId}`);
+    return response.json();
   }
 };

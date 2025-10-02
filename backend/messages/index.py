@@ -122,6 +122,24 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'body': json.dumps([dict(friend) for friend in friends]),
                     'isBase64Encoded': False
                 }
+            
+            # Get typing status
+            elif action == 'typing_status':
+                other_user_id = params.get('other_user_id')
+                cursor.execute("""
+                    SELECT is_typing, last_updated 
+                    FROM typing_status 
+                    WHERE user_id = %s AND chat_with_id = %s 
+                    AND last_updated > NOW() - INTERVAL '5 seconds'
+                """, (other_user_id, user_id))
+                status = cursor.fetchone()
+                
+                return {
+                    'statusCode': 200,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'is_typing': status['is_typing'] if status else False}),
+                    'isBase64Encoded': False
+                }
         
         elif method == 'POST':
             body_data = json.loads(event.get('body', '{}'))
@@ -189,6 +207,27 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'statusCode': 200,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
                     'body': json.dumps({'id': result['id'], 'status': 'sent'}),
+                    'isBase64Encoded': False
+                }
+            
+            # Update typing status
+            elif action == 'typing':
+                sender_id = body_data.get('sender_id')
+                receiver_id = body_data.get('receiver_id')
+                is_typing = body_data.get('is_typing', False)
+                
+                cursor.execute("""
+                    INSERT INTO typing_status (user_id, chat_with_id, is_typing, last_updated)
+                    VALUES (%s, %s, %s, NOW())
+                    ON CONFLICT (user_id, chat_with_id) 
+                    DO UPDATE SET is_typing = %s, last_updated = NOW()
+                """, (sender_id, receiver_id, is_typing, is_typing))
+                conn.commit()
+                
+                return {
+                    'statusCode': 200,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'status': 'updated'}),
                     'isBase64Encoded': False
                 }
             

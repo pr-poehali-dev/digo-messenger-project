@@ -28,6 +28,8 @@ export default function Index() {
   const [adminAction, setAdminAction] = useState('');
   const [adminTargetId, setAdminTargetId] = useState('');
   const [lastMessageCount, setLastMessageCount] = useState(0);
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
   const playNotificationSound = () => {
@@ -56,10 +58,31 @@ export default function Index() {
       loadMessages(currentUser.user_id, selectedChat.chat_user_id);
       const interval = setInterval(() => {
         loadMessages(currentUser.user_id, selectedChat.chat_user_id);
+        checkTypingStatus();
       }, 3000);
       return () => clearInterval(interval);
     }
   }, [selectedChat, currentUser]);
+
+  const checkTypingStatus = async () => {
+    if (!currentUser || !selectedChat) return;
+    const data = await api.getTypingStatus(currentUser.user_id, selectedChat.chat_user_id);
+    setIsTyping(data.is_typing);
+  };
+
+  const handleTyping = async () => {
+    if (!currentUser || !selectedChat) return;
+    
+    await api.updateTypingStatus(currentUser.user_id, selectedChat.chat_user_id, true);
+    
+    if (typingTimeout) clearTimeout(typingTimeout);
+    
+    const timeout = setTimeout(async () => {
+      await api.updateTypingStatus(currentUser.user_id, selectedChat.chat_user_id, false);
+    }, 3000);
+    
+    setTypingTimeout(timeout);
+  };
 
   const handleAuth = async () => {
     try {
@@ -106,6 +129,8 @@ export default function Index() {
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedChat || !currentUser) return;
     await api.sendMessage(currentUser.user_id, selectedChat.chat_user_id, newMessage);
+    await api.updateTypingStatus(currentUser.user_id, selectedChat.chat_user_id, false);
+    if (typingTimeout) clearTimeout(typingTimeout);
     setNewMessage('');
     loadMessages(currentUser.user_id, selectedChat.chat_user_id);
   };
@@ -442,9 +467,15 @@ export default function Index() {
                 </Avatar>
                 <div>
                   <p className="font-semibold">{selectedChat.username}</p>
-                  <div className="flex items-center gap-1 text-xs text-accent">
-                    <div className="w-2 h-2 bg-accent rounded-full"></div>
-                    <span>онлайн</span>
+                  <div className="flex items-center gap-1 text-xs">
+                    {isTyping ? (
+                      <span className="text-primary">печатает...</span>
+                    ) : (
+                      <>
+                        <div className="w-2 h-2 bg-accent rounded-full"></div>
+                        <span className="text-accent">онлайн</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -470,6 +501,17 @@ export default function Index() {
                       </div>
                     </div>
                   ))}
+                  {isTyping && (
+                    <div className="flex justify-start">
+                      <div className="bg-secondary rounded-2xl px-4 py-2">
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
+                          <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
+                          <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
 
@@ -478,7 +520,10 @@ export default function Index() {
                   <Input
                     placeholder="Введите сообщение..."
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                    onChange={(e) => {
+                      setNewMessage(e.target.value);
+                      handleTyping();
+                    }}
                     onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                   />
                   <Button onClick={sendMessage} size="icon">
