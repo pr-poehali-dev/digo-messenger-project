@@ -1,0 +1,30 @@
+{
+  "tests": [
+    {
+      "name": "Get all users (admin)",
+      "method": "GET",
+      "path": "/?action=users",
+      "headers": {
+        "X-User-Id": "000001"
+      },
+      "expectedStatus": 200,
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Block user",
+      "method": "POST",
+      "headers": {
+        "X-User-Id": "000001"
+      },
+      "body": {
+        "action": "block",
+        "user_id": "123456"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "status": "blocked"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

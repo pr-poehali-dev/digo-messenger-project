@@ -1,0 +1,23 @@
+{
+  "tests": [
+    {
+      "name": "Send message",
+      "method": "POST",
+      "body": {
+        "action": "send",
+        "sender_id": "000001",
+        "receiver_id": "123456",
+        "message": "Hello!"
+      },
+      "expectedStatus": 200,
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get chats list",
+      "method": "GET",
+      "path": "/?action=chats&user_id=000001",
+      "expectedStatus": 200,
+      "bodyMatcher": "partial"
+    }
+  ]
+}
