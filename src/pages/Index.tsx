@@ -169,8 +169,9 @@ export default function Index() {
   const acceptRequest = async (requestId: number) => {
     await api.acceptFriendRequest(requestId);
     if (currentUser) {
-      loadFriendRequests(currentUser.user_id);
-      loadChats(currentUser.user_id);
+      await loadFriendRequests(currentUser.user_id);
+      await loadFriends();
+      await loadChats(currentUser.user_id);
     }
     toast({ title: 'Заявка принята!' });
   };
