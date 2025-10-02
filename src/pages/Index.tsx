@@ -27,7 +27,14 @@ export default function Index() {
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [adminAction, setAdminAction] = useState('');
   const [adminTargetId, setAdminTargetId] = useState('');
+  const [lastMessageCount, setLastMessageCount] = useState(0);
   const { toast } = useToast();
+
+  const playNotificationSound = () => {
+    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZSA0PVqzn77BdGAg+ltryxnMpBSuAzvLZiTUIGGm98OScTgwOUKni8LNgHAU3kdfu0H4yBSN2x/LhjjwLElu17O6nWBUIR5/f88p5KwUlgM/02og2BxpqvO7mnEwMD1Gs5O+zYRsGN5LY8dJ+MwUldsfy4I4/CxFctOzuqVkVCEef4PPLeSsFJIDO8tmINQcaarzv5ppPDA5Rq+Tvs2IbBzaR2PHSfzIGJHbH8+COPwsRXbXs7qlZFQhHn9/yy3orBSR/zvLZiTYHGmq87+mbUQwOUqzl77NiGwc2ktjx0n8yBiV2x/Pgjj8LEV217O6pWRUIR5/f8st6KwUkf87y2Yk2BxpqvO/pm1EMDlKs5e+zYhsHNpLY8dJ/MgYldsfy4I4/CxFctezuqVkVCEef4PPLeisFJH/O8tmJNgcaarzv6ZtRDA5SrOXvs2IbBzaS2PHSfzIGJXbH8+COPwsRXLXs7qlZFQhHn9/yy3orBSR/zvLZiTYHGmq87+mbUQwOUqzl77NiGwc2ktjx0n8yBiV2x/Pgjj8LEV217O6pWRUIR5/f8st6KwUkf87y2Yk2BxpqvO/pm1EMDlKs5e+zYhsHNpLY8dJ/MgYldsfy4I4/CxFctezuqVkVCEef4PPLeisFJH/O8tmJNgcaarzv6ZtRDA5SrOXvs2IbBzaS2PHSfzIGJXbH8+COPwsRXLXs7qlZFQhHn9/yy3orBSR/zvLZiTYHGmq87+mbUQwOUqzl77NiGwc2ktjx0n8yBiV2x/Pgjj8LEVy17O6pWRUIR5/g88t6KwUkf87y2Yk2BxpqvO/pm1EMDlKs5e+zYhsHNpLY8dJ/MgYldsfy4I4/CxFctezuqVkVCEef3/LLeisFJH/O8tmJNgcaarzv6ZtRDA5SrOXvs2IbBzaS2PHSfzIGJXbH8+COPwsRXLXs7qlZFQhHn9/yy3orBSR/zvLZiTYHGmq87+mbUQwOUqzl77NiGwc2ktjx0n8yBiV2x/Pgjj8LEVy17O6pWRUIR5/f8st6KwUkf87y2Yk2BxpqvO/pm1EMDlKs5e+zYhsHNpLY8dJ/MgYldsfy4I4/CxFctezuqVkVCEef3/LLeisFJH/O8tmJNgcaarzv6ZtRDA5SrOXvs2IbBzaS2PHSfzIGJXbH8+COPwsRXLXs7qlZFQhHn9/yy3orBSR/zvLZiTYHGmq87+mbUQwOUqzl77NiGwc2ktjx0n8yBiV2x/Pgjj8LEVy17O6pWRUIR5/f8st6KwUkf87y2Yk2BxpqvO/pm1EMDlKs5e+zYhsHNpLY8dJ/MgYldsfy4I4/CxFctezuqVkVCEef3/LLeisFJH/O8tmJNgcaarzv6ZtRDA5SrOXvs2IbBzaS2PHSfzIGJXbH8+COPwsRXLXs7qlZFQhHn9/yy3orBSR/zvLZiTYHGmq87+mbUQwOUqzl77NiGwc2ktjx0n8yBiV2x/Pgjj8LEVy17O6pWRUIR5/f8st6KwUkf87y2Yk2BxpqvO/pm1EMDlKs5e+zYhsHNpLY8dJ/MgYldsfy4I4/CxFctezuqVkVCEef3/LLeisFJH/O8tmJNgcaarzv6ZtRDA5SrOXvs2IbBzaS2PHSfzIGJXbH8+COPwsRXLXs7qlZFQhHn9/yy3orBSR/zvLZiTYHGmq87+mbUQwOUqzl77NiGwc=');
+    audio.volume = 0.3;
+    audio.play().catch(() => {});
+  };
 
   useEffect(() => {
     const user = localStorage.getItem('digo_user');
@@ -35,6 +42,10 @@ export default function Index() {
       const parsedUser = JSON.parse(user);
       setCurrentUser(parsedUser);
       setIsAuthenticated(true);
+      
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
       loadChats(parsedUser.user_id);
       loadFriendRequests(parsedUser.user_id);
     }
@@ -74,6 +85,21 @@ export default function Index() {
 
   const loadMessages = async (userId: string, otherUserId: string) => {
     const data = await api.getMessages(userId, otherUserId);
+    
+    if (data.length > lastMessageCount && lastMessageCount > 0) {
+      const latestMessage = data[data.length - 1];
+      if (latestMessage.sender_id !== userId) {
+        playNotificationSound();
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('Новое сообщение в Digo', {
+            body: `${latestMessage.sender_name || 'Пользователь'}: ${latestMessage.message}`,
+            icon: '/favicon.svg'
+          });
+        }
+      }
+    }
+    
+    setLastMessageCount(data.length);
     setMessages(data);
   };
 
