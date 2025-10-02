@@ -5,7 +5,7 @@
       "method": "GET",
       "path": "/?action=users",
       "headers": {
-        "X-User-Id": "000001"
+        "X-User-Id": "727863"
       },
       "expectedStatus": 200,
       "bodyMatcher": "partial"
@@ -14,15 +14,47 @@
       "name": "Block user",
       "method": "POST",
       "headers": {
-        "X-User-Id": "000001"
+        "X-User-Id": "727863"
       },
       "body": {
         "action": "block",
-        "user_id": "123456"
+        "user_id": "000001"
       },
       "expectedStatus": 200,
       "expectedBody": {
         "status": "blocked"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Unblock user",
+      "method": "POST",
+      "headers": {
+        "X-User-Id": "727863"
+      },
+      "body": {
+        "action": "unblock",
+        "user_id": "000001"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "status": "unblocked"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Grant admin rights",
+      "method": "POST",
+      "headers": {
+        "X-User-Id": "727863"
+      },
+      "body": {
+        "action": "grant_admin",
+        "user_id": "000001"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "status": "admin_granted"
       },
       "bodyMatcher": "partial"
     }

@@ -152,6 +152,22 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'body': json.dumps({'status': 'admin_revoked', 'user_id': target_user_id}),
                     'isBase64Encoded': False
                 }
+            
+            # Delete user account
+            elif action == 'delete':
+                cursor.execute("DELETE FROM messages WHERE sender_id = %s OR receiver_id = %s", (target_user_id, target_user_id))
+                cursor.execute("DELETE FROM friend_requests WHERE sender_id = %s OR receiver_id = %s", (target_user_id, target_user_id))
+                cursor.execute("DELETE FROM friends WHERE user_id = %s OR friend_id = %s", (target_user_id, target_user_id))
+                cursor.execute("DELETE FROM typing_status WHERE user_id = %s OR chat_with_id = %s", (target_user_id, target_user_id))
+                cursor.execute("DELETE FROM users WHERE user_id = %s", (target_user_id,))
+                conn.commit()
+                
+                return {
+                    'statusCode': 200,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'status': 'deleted', 'user_id': target_user_id}),
+                    'isBase64Encoded': False
+                }
         
         return {
             'statusCode': 405,

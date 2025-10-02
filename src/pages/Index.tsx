@@ -191,14 +191,21 @@ export default function Index() {
       if (adminAction === 'block') {
         await api.blockUser(currentUser.user_id, adminTargetId);
         toast({ title: 'Пользователь заблокирован' });
+      } else if (adminAction === 'unblock') {
+        await api.unblockUser(currentUser.user_id, adminTargetId);
+        toast({ title: 'Пользователь разблокирован' });
       } else if (adminAction === 'grant') {
         await api.grantAdmin(currentUser.user_id, adminTargetId);
         toast({ title: 'Права администратора выданы' });
       } else if (adminAction === 'revoke') {
         await api.revokeAdmin(currentUser.user_id, adminTargetId);
         toast({ title: 'Права администратора отозваны' });
+      } else if (adminAction === 'delete') {
+        await api.deleteUser(currentUser.user_id, adminTargetId);
+        toast({ title: 'Аккаунт удален' });
       }
       setAdminTargetId('');
+      setAdminAction('');
       loadAdminUsers();
     } catch (error: any) {
       toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });
@@ -408,8 +415,10 @@ export default function Index() {
                       >
                         <option value="">Выберите действие</option>
                         <option value="block">Заблокировать пользователя</option>
+                        <option value="unblock">Разблокировать пользователя</option>
                         <option value="grant">Выдать админ права</option>
                         <option value="revoke">Забрать админ права</option>
+                        <option value="delete">Удалить аккаунт</option>
                       </select>
                       <div className="flex gap-2">
                         <Input 
