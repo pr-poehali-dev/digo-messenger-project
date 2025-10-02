@@ -85,6 +85,19 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 user = cursor.fetchone()
                 conn.commit()
                 
+                # Send welcome message from TeleDigo bot
+                cursor.execute(
+                    "INSERT INTO messages (sender_id, receiver_id, message) VALUES (%s, %s, %s)",
+                    ('BOTDGO', user_id, f'Добро пожаловать в Digo, {username}! 🚀\n\nЯ TeleDigo - твой персональный ассистент. Я буду уведомлять тебя о входах в аккаунт и важных событиях.\n\nТвой ID: {user_id}')
+                )
+                
+                # Create friendship with bot
+                cursor.execute(
+                    "INSERT INTO friends (user_id, friend_id) VALUES (%s, %s), (%s, %s)",
+                    (user_id, 'BOTDGO', 'BOTDGO', user_id)
+                )
+                conn.commit()
+                
                 return {
                     'statusCode': 200,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
@@ -132,6 +145,15 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'body': json.dumps({'error': 'Account is blocked'}),
                         'isBase64Encoded': False
                     }
+                
+                # Send login notification from TeleDigo bot
+                import datetime
+                now = datetime.datetime.now().strftime('%d.%m.%Y в %H:%M')
+                cursor.execute(
+                    "INSERT INTO messages (sender_id, receiver_id, message) VALUES (%s, %s, %s)",
+                    ('BOTDGO', user['user_id'], f'🔑 Вход в аккаунт\nВремя: {now}\nЕсли это не вы, немедленно смените пароль!')
+                )
+                conn.commit()
                 
                 return {
                     'statusCode': 200,

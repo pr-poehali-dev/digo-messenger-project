@@ -27,6 +27,8 @@ export default function Index() {
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [adminAction, setAdminAction] = useState('');
   const [adminTargetId, setAdminTargetId] = useState('');
+  const [adminLogs, setAdminLogs] = useState<any[]>([]);
+  const [notificationMessage, setNotificationMessage] = useState('');
   const [lastMessageCount, setLastMessageCount] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -185,6 +187,24 @@ export default function Index() {
     setAdminUsers(data);
   };
 
+  const loadAdminLogs = async () => {
+    if (!currentUser) return;
+    const data = await api.getAdminLogs(currentUser.user_id);
+    setAdminLogs(data);
+  };
+
+  const sendNotificationToAll = async () => {
+    if (!currentUser || !notificationMessage.trim()) return;
+    try {
+      const result = await api.sendNotificationToAll(currentUser.user_id, notificationMessage);
+      toast({ title: `Уведомление отправлено ${result.recipients} пользователям` });
+      setNotificationMessage('');
+      loadAdminLogs();
+    } catch (error: any) {
+      toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });
+    }
+  };
+
   const handleAdminAction = async () => {
     if (!currentUser || !adminTargetId.trim()) return;
     try {
@@ -207,6 +227,7 @@ export default function Index() {
       setAdminTargetId('');
       setAdminAction('');
       loadAdminUsers();
+      loadAdminLogs();
     } catch (error: any) {
       toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });
     }
@@ -295,7 +316,7 @@ export default function Index() {
               <TabsTrigger 
                 value="settings" 
                 className="flex flex-col items-center gap-1 py-2"
-                onClick={currentUser?.is_admin ? loadAdminUsers : undefined}
+                onClick={currentUser?.is_admin ? () => { loadAdminUsers(); loadAdminLogs(); } : undefined}
               >
                 <Icon name="Settings" size={18} />
                 <span className="text-xs">Настройки</span>
@@ -365,8 +386,7 @@ export default function Index() {
                   Если у вас есть вопросы или проблемы, свяжитесь с нами:
                 </p>
                 <div className="space-y-2">
-                  <p className="text-sm">📧 support@digo.com</p>
-                  <p className="text-sm">💬 ID поддержки: 000001</p>
+                  <p className="text-sm">📧 digo.messenger@gmail.com</p>
                 </div>
               </div>
             </TabsContent>
@@ -432,9 +452,22 @@ export default function Index() {
                       </div>
                     </div>
                   </div>
+                  
+                  <div className="space-y-2">
+                    <h4 className="font-semibold">📢 Уведомление всем пользователям</h4>
+                    <Input 
+                      placeholder="Введите сообщение для всех"
+                      value={notificationMessage}
+                      onChange={(e) => setNotificationMessage(e.target.value)}
+                    />
+                    <Button onClick={sendNotificationToAll} className="w-full">
+                      Отправить всем
+                    </Button>
+                  </div>
+
                   <div>
                     <h4 className="font-semibold mb-2">Все пользователи</h4>
-                    <ScrollArea className="h-48">
+                    <ScrollArea className="h-32">
                       {adminUsers.map((user) => (
                         <div key={user.user_id} className="p-2 border-b text-xs">
                           <p><strong>{user.username}</strong> - {user.user_id}</p>
@@ -442,6 +475,19 @@ export default function Index() {
                             {user.is_admin && <Badge variant="default" className="text-xs">Admin</Badge>}
                             {user.is_blocked && <Badge variant="destructive" className="text-xs">Blocked</Badge>}
                           </div>
+                        </div>
+                      ))}
+                    </ScrollArea>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-2">📋 История действий</h4>
+                    <ScrollArea className="h-32">
+                      {adminLogs.map((log) => (
+                        <div key={log.id} className="p-2 border-b text-xs">
+                          <p className="font-medium">{log.action_type}</p>
+                          <p className="text-muted-foreground">{log.description}</p>
+                          <p className="text-muted-foreground">{new Date(log.created_at).toLocaleString('ru')}</p>
                         </div>
                       ))}
                     </ScrollArea>

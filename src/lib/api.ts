@@ -149,6 +149,22 @@ export const api = {
     return response.json();
   },
 
+  async getAdminLogs(adminUserId: string) {
+    const response = await fetch(`${API_URLS.admin}?action=logs`, {
+      headers: { 'X-User-Id': adminUserId }
+    });
+    return response.json();
+  },
+
+  async sendNotificationToAll(adminUserId: string, message: string) {
+    const response = await fetch(API_URLS.admin, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-User-Id': adminUserId },
+      body: JSON.stringify({ action: 'notify_all', message })
+    });
+    return response.json();
+  },
+
   async grantAdmin(adminUserId: string, targetUserId: string) {
     const response = await fetch(API_URLS.admin, {
       method: 'POST',
